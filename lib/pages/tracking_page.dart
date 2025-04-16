@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class TrackingPage extends StatefulWidget {
   @override
@@ -18,9 +19,8 @@ class _TrackingPageState extends State<TrackingPage> {
 
   Future<void> _getLocation() async {
     bool serviceEnabled;
-    LocationPermission permission;
 
-    // Cek apakah lokasi aktif
+    // Cek apakah layanan lokasi aktif
     serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
       setState(() {
@@ -29,34 +29,40 @@ class _TrackingPageState extends State<TrackingPage> {
       return;
     }
 
-    // Cek permission
-    permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) {
-        setState(() {
-          _status = "Izin lokasi ditolak.";
-        });
-        return;
-      }
-    }
+    // Meminta izin lokasi menggunakan permission_handler
+    PermissionStatus permissionStatus = await Permission.location.request();
 
-    if (permission == LocationPermission.deniedForever) {
+    if (permissionStatus != PermissionStatus.granted) {
       setState(() {
-        _status = "Izin lokasi ditolak permanen.";
+        _status = "Izin lokasi ditolak.";
       });
       return;
     }
 
-    // Ambil posisi saat ini
-    Geolocator.getPositionStream(
-      locationSettings: LocationSettings(accuracy: LocationAccuracy.high),
-    ).listen((Position pos) {
+    // Jika izin diberikan, lanjutkan mengambil lokasi
+    try {
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+
       setState(() {
-        _position = pos;
+        _position = position;
         _status = "Lokasi berhasil didapat.";
       });
-    });
+
+      // Setelah mendapatkan posisi pertama, mulai stream lokasi
+      Geolocator.getPositionStream(
+        locationSettings: LocationSettings(accuracy: LocationAccuracy.high),
+      ).listen((Position pos) {
+        setState(() {
+          _position = pos;
+        });
+      });
+    } catch (e) {
+      setState(() {
+        _status = "Gagal mendapatkan lokasi: $e";
+      });
+    }
   }
 
   @override
