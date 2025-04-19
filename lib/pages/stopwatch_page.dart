@@ -9,6 +9,10 @@ class StopwatchPage extends StatefulWidget {
 class _StopwatchPageState extends State<StopwatchPage> {
   Stopwatch _stopwatch = Stopwatch();
   Timer? _timer;
+  List<Duration> _laps = [];
+  List<Duration> _lapDurations = [];
+
+  bool _isStopped = false;
 
   void _startTimer() {
     _timer = Timer.periodic(Duration(milliseconds: 100), (timer) {
@@ -19,26 +23,45 @@ class _StopwatchPageState extends State<StopwatchPage> {
   void _startStopwatch() {
     _stopwatch.start();
     _startTimer();
+    setState(() {
+      _isStopped = false;
+    });
   }
 
   void _stopStopwatch() {
     _stopwatch.stop();
     _timer?.cancel();
+    setState(() {
+      _isStopped = true;
+    });
   }
 
   void _resetStopwatch() {
     _stopwatch.reset();
-    setState(() {});
+    _stopwatch.stop();
+    _timer?.cancel();
+    _laps.clear();
+    _lapDurations.clear();
+    setState(() {
+      _isStopped = false;
+    });
   }
 
-  String _formatTime(int milliseconds) {
-    int seconds = milliseconds ~/ 1000;
-    int minutes = seconds ~/ 60;
-    int hours = minutes ~/ 60;
+  void _recordLap() {
+    final now = _stopwatch.elapsed;
+    final lastLapTime = _laps.isNotEmpty ? _laps.first : Duration.zero;
+    final lapTime = now - lastLapTime;
 
+    setState(() {
+      _laps.insert(0, now);
+      _lapDurations.insert(0, lapTime);
+    });
+  }
+
+  String _formatDuration(Duration duration) {
     String twoDigits(int n) => n.toString().padLeft(2, '0');
-
-    return "${twoDigits(hours)}:${twoDigits(minutes % 60)}:${twoDigits(seconds % 60)}.${(milliseconds % 1000 ~/ 100)}";
+    final ms = (duration.inMilliseconds % 1000).toString().padLeft(3, '0').substring(0, 2);
+    return "${twoDigits(duration.inMinutes % 60)}:${twoDigits(duration.inSeconds % 60)},$ms";
   }
 
   @override
@@ -50,6 +73,26 @@ class _StopwatchPageState extends State<StopwatchPage> {
 
   @override
   Widget build(BuildContext context) {
+    bool isRunning = _stopwatch.isRunning;
+    bool isReset = _stopwatch.elapsedMilliseconds == 0;
+
+    String mainButtonText;
+    VoidCallback? mainButtonAction;
+
+    if (isRunning) {
+      mainButtonText = "Stop";
+      mainButtonAction = _stopStopwatch;
+    } else if (!isReset && _isStopped) {
+      mainButtonText = "Lanjutkan";
+      mainButtonAction = _startStopwatch;
+    } else {
+      mainButtonText = "Start";
+      mainButtonAction = _startStopwatch;
+    }
+
+    Duration? fastest = _lapDurations.isNotEmpty ? _lapDurations.reduce((a, b) => a < b ? a : b) : null;
+    Duration? slowest = _lapDurations.isNotEmpty ? _lapDurations.reduce((a, b) => a > b ? a : b) : null;
+
     return Scaffold(
       backgroundColor: Colors.lightBlue[50],
       appBar: AppBar(
@@ -58,53 +101,104 @@ class _StopwatchPageState extends State<StopwatchPage> {
         foregroundColor: Colors.white,
         elevation: 0,
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              _formatTime(_stopwatch.elapsedMilliseconds),
+      body: Column(
+        mainAxisAlignment: MainAxisAlignment.start,
+        children: [
+          SizedBox(height: 60),
+          Center(
+            child: Text(
+              _formatDuration(_stopwatch.elapsed),
               style: TextStyle(
                 fontSize: 48,
                 fontWeight: FontWeight.bold,
                 color: Colors.blue[900],
               ),
             ),
-            SizedBox(height: 40),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                ElevatedButton(
-                  onPressed: _stopwatch.isRunning ? _stopStopwatch : _startStopwatch,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: _stopwatch.isRunning ? Colors.orangeAccent : Colors.blue[400],
-                    foregroundColor: Colors.white,
-                    padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                    textStyle: TextStyle(fontSize: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12.0),
+          ),
+          SizedBox(height: 40),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              ElevatedButton(
+                onPressed: isRunning ? _recordLap : null,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.grey[700],
+                  foregroundColor: Colors.white,
+                  padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  textStyle: TextStyle(fontSize: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12.0),
+                  ),
+                ),
+                child: Text('Lap'),
+              ),
+              SizedBox(width: 20),
+              ElevatedButton(
+                onPressed: mainButtonAction,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: isRunning ? Colors.orangeAccent : Colors.blue[400],
+                  foregroundColor: Colors.white,
+                  padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  textStyle: TextStyle(fontSize: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12.0),
+                  ),
+                ),
+                child: Text(mainButtonText),
+              ),
+              SizedBox(width: 20),
+              ElevatedButton(
+                onPressed: _resetStopwatch,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.redAccent,
+                  foregroundColor: Colors.white,
+                  padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  textStyle: TextStyle(fontSize: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12.0),
+                  ),
+                ),
+                child: Text('Reset'),
+              ),
+            ],
+          ),
+          SizedBox(height: 30),
+          Expanded(
+            child: ListView.builder(
+              itemCount: _lapDurations.length,
+              itemBuilder: (context, index) {
+                final lapDuration = _lapDurations[index];
+
+                Color textColor;
+                if (lapDuration == fastest) {
+                  textColor = Colors.green;
+                } else if (lapDuration == slowest) {
+                  textColor = Colors.red;
+                } else {
+                  textColor = Colors.black;
+                }
+
+                return ListTile(
+                  title: Text(
+                    'Lap ${_lapDurations.length - index}',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.blue[900],
                     ),
                   ),
-                  child: Text(_stopwatch.isRunning ? 'Stop' : 'Start'),
-                ),
-                SizedBox(width: 20),
-                ElevatedButton(
-                  onPressed: _resetStopwatch,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.redAccent,
-                    foregroundColor: Colors.white,
-                    padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                    textStyle: TextStyle(fontSize: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12.0),
+                  trailing: Text(
+                    _formatDuration(lapDuration),
+                    style: TextStyle(
+                      fontFamily: 'Courier', // Samakan font untuk semua
+                      fontSize: 16,
+                      color: textColor,
                     ),
                   ),
-                  child: Text('Reset'),
-                ),
-              ],
-            )
-          ],
-        ),
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }

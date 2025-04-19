@@ -56,8 +56,8 @@ class BantuanPage extends StatelessWidget {
             SizedBox(height: 16),
             Text(
               "1. Gunakan menu utama untuk memilih fitur.\n"
-              "2. Masukkan data sesuai perintah di setiap halaman.\n"
-              "3. Gunakan tombol navigasi untuk kembali.\n"
+              "2. Gunakan tiap fitur sesuai dengan petunjuk dari masing - masing fitur.\n"
+              "3. Gunakan tombol navigasi untuk kembali ke Menu Utama.\n"
               "4. Untuk keluar, tekan tombol Logout di bawah.",
               style: TextStyle(fontSize: 16, color: Colors.grey[800]),
             ),

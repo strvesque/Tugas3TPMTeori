@@ -24,7 +24,7 @@ class MenuPage extends StatelessWidget {
             children: [
               MenuButton(title: "Stopwatch", page: StopwatchPage()),
               MenuButton(title: "Jenis Bilangan", page: BilanganPage()),
-              MenuButton(title: "Tracking LBS", page: TrackingPage()),
+              MenuButton(title: "Tracking LBS", page: TrackingMapPage()),
               MenuButton(title: "Konversi Waktu", page: KonversiWaktuPage()),
               MenuButton(title: "Rekomendasi Situs", page: RekomendasiPage()),
             ],

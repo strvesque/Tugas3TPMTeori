@@ -2,9 +2,24 @@ import 'package:flutter/material.dart';
 
 class AnggotaPage extends StatelessWidget {
   final List<Map<String, String>> anggota = [
-    {"nama": "Hikmal Haqiqi", "nim": "123220056", "kelas": "IF-A"},
-    {"nama": "I Gede Hariel Dananjaya", "nim": "123220069", "kelas": "IF-A"},
-    {"nama": "Aisyah Kusumawati", "nim": "123220195", "kelas": "IF-A"},
+    {
+      "nama": "Hikmal Haqiqi",
+      "nim": "123220056",
+      "kelas": "IF-A",
+      "foto": "assets/hikmal.jpg"
+    },
+    {
+      "nama": "I Gede Hariel Dananjaya",
+      "nim": "123220069",
+      "kelas": "IF-A",
+      "foto": "assets/hariel.jpg"
+    },
+    {
+      "nama": "Aisyah Kusumawati",
+      "nim": "123220195",
+      "kelas": "IF-A",
+      "foto": "assets/cica.jpg"
+    },
   ];
 
   @override
@@ -31,11 +46,7 @@ class AnggotaPage extends StatelessWidget {
             margin: EdgeInsets.symmetric(vertical: 8),
             child: ListTile(
               leading: CircleAvatar(
-                backgroundColor: Colors.blue[300],
-                child: Text(
-                  "${index + 1}",
-                  style: TextStyle(color: Colors.white),
-                ),
+                backgroundImage: AssetImage(a["foto"]!),
               ),
               title: Text(
                 a["nama"]!,

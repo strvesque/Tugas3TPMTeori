@@ -1,54 +1,128 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 class KonversiWaktuPage extends StatefulWidget {
   @override
-  _KonversiWaktuPageState createState() => _KonversiWaktuPageState();
+  State<KonversiWaktuPage> createState() => _KonversiWaktuPageState();
 }
 
 class _KonversiWaktuPageState extends State<KonversiWaktuPage> {
-  final TextEditingController detikController = TextEditingController();
-  final TextEditingController jamController = TextEditingController();
-  final TextEditingController menitController = TextEditingController();
-  final TextEditingController detik2Controller = TextEditingController();
+  final tahunController = TextEditingController();
+  final jamController = TextEditingController();
+  final menitController = TextEditingController();
+  final detikController = TextEditingController();
 
-  String hasilKonversi1 = "";
-  String hasilKonversi2 = "";
+  final formatter = NumberFormat("#.#############################");
 
-  void konversiKeWaktu() {
-    int? detik = int.tryParse(detikController.text);
-    if (detik == null || detik < 0) {
-      setState(() {
-        hasilKonversi1 = "Input tidak valid.";
-      });
-      return;
+  bool isEditing = false;
+
+  void updateFromTahun(String value) {
+    if (isEditing) return;
+    isEditing = true;
+    final tahun = double.tryParse(value);
+    if (tahun != null) {
+      final totalJam = tahun * 8760;
+      final totalMenit = tahun * 525600;
+      final totalDetik = tahun * 31536000;
+
+      jamController.text = formatter.format(totalJam);
+      menitController.text = formatter.format(totalMenit);
+      detikController.text = formatter.format(totalDetik);
+    } else {
+      jamController.clear();
+      menitController.clear();
+      detikController.clear();
     }
-
-    int jam = detik ~/ 3600;
-    int menit = (detik % 3600) ~/ 60;
-    int sisaDetik = detik % 60;
-
-    setState(() {
-      hasilKonversi1 = "$jam jam, $menit menit, $sisaDetik detik";
-    });
+    isEditing = false;
   }
 
-  void konversiKeDetik() {
-    int? jam = int.tryParse(jamController.text);
-    int? menit = int.tryParse(menitController.text);
-    int? detik = int.tryParse(detik2Controller.text);
+  void updateFromJam(String value) {
+    if (isEditing) return;
+    isEditing = true;
+    final jam = double.tryParse(value);
+    if (jam != null) {
+      final tahun = jam / 8760;
+      final totalMenit = tahun * 525600;
+      final totalDetik = tahun * 31536000;
 
-    if (jam == null || menit == null || detik == null || jam < 0 || menit < 0 || detik < 0) {
-      setState(() {
-        hasilKonversi2 = "Input tidak valid.";
-      });
-      return;
+      tahunController.text = formatter.format(tahun);
+      menitController.text = formatter.format(totalMenit);
+      detikController.text = formatter.format(totalDetik);
+    } else {
+      tahunController.clear();
+      menitController.clear();
+      detikController.clear();
     }
+    isEditing = false;
+  }
 
-    int total = (jam * 3600) + (menit * 60) + detik;
+  void updateFromMenit(String value) {
+    if (isEditing) return;
+    isEditing = true;
+    final menit = double.tryParse(value);
+    if (menit != null) {
+      final tahun = menit / 525600;
+      final totalJam = tahun * 8760;
+      final totalDetik = tahun * 31536000;
 
-    setState(() {
-      hasilKonversi2 = "$total detik";
-    });
+      tahunController.text = formatter.format(tahun);
+      jamController.text = formatter.format(totalJam);
+      detikController.text = formatter.format(totalDetik);
+    } else {
+      tahunController.clear();
+      jamController.clear();
+      detikController.clear();
+    }
+    isEditing = false;
+  }
+
+  void updateFromDetik(String value) {
+    if (isEditing) return;
+    isEditing = true;
+    final detik = double.tryParse(value);
+    if (detik != null) {
+      final tahun = detik / 31536000;
+      final totalJam = tahun * 8760;
+      final totalMenit = tahun * 525600;
+
+      tahunController.text = formatter.format(tahun);
+      jamController.text = formatter.format(totalJam);
+      menitController.text = formatter.format(totalMenit);
+    } else {
+      tahunController.clear();
+      jamController.clear();
+      menitController.clear();
+    }
+    isEditing = false;
+  }
+
+  @override
+  void dispose() {
+    tahunController.dispose();
+    jamController.dispose();
+    menitController.dispose();
+    detikController.dispose();
+    super.dispose();
+  }
+
+  Widget buildInput(String label, TextEditingController controller,
+      Function(String) onChanged) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: TextField(
+        controller: controller,
+        keyboardType: TextInputType.numberWithOptions(decimal: true),
+        decoration: InputDecoration(
+          labelText: label,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          filled: true,
+          fillColor: Colors.white,
+        ),
+        onChanged: onChanged,
+      ),
+    );
   }
 
   @override
@@ -56,184 +130,24 @@ class _KonversiWaktuPageState extends State<KonversiWaktuPage> {
     return Scaffold(
       backgroundColor: Colors.lightBlue[50],
       appBar: AppBar(
-        title: Text("Konversi Waktu"),
-        backgroundColor: Colors.blue[300],
+        title: Text("Konversi Waktu Otomatis"),
+        backgroundColor: Colors.lightBlue,
         foregroundColor: Colors.white,
-        elevation: 0,
       ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.all(16),
+      body: Padding(
+        padding: const EdgeInsets.all(16),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Card(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              elevation: 5,
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  children: [
-                    Text(
-                      "Detik → Jam:Menit:Detik",
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18,
-                        color: Colors.blue[800],
-                      ),
-                    ),
-                    SizedBox(height: 10),
-                    TextField(
-                      controller: detikController,
-                      keyboardType: TextInputType.number,
-                      decoration: InputDecoration(
-                        labelText: "Masukkan detik",
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        filled: true,
-                        fillColor: Colors.white,
-                      ),
-                    ),
-                    SizedBox(height: 10),
-                    ElevatedButton(
-                      onPressed: konversiKeWaktu,
-                      child: Text("Konversi"),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue[400],
-                        foregroundColor: Colors.white,
-                        padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                    ),
-                    if (hasilKonversi1.isNotEmpty) ...[
-                      SizedBox(height: 10),
-                      Center(
-                        child: Container(
-                          padding: EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: Colors.blue[100],
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            hasilKonversi1,
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.blue[900],
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
+            Text(
+              "Silahkan isi salah satu kolom dibawah ini. Hasil konversi akan muncul secara otomatis.",
+              style: TextStyle(fontSize: 16, color: Colors.black87),
             ),
-            SizedBox(height: 20),
-            Card(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              elevation: 5,
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  children: [
-                    Text(
-                      "Jam:Menit:Detik → Detik",
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18,
-                        color: Colors.blue[800],
-                      ),
-                    ),
-                    SizedBox(height: 10),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            controller: jamController,
-                            keyboardType: TextInputType.number,
-                            decoration: InputDecoration(
-                              labelText: "Jam",
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              filled: true,
-                              fillColor: Colors.white,
-                            ),
-                          ),
-                        ),
-                        SizedBox(width: 8),
-                        Expanded(
-                          child: TextField(
-                            controller: menitController,
-                            keyboardType: TextInputType.number,
-                            decoration: InputDecoration(
-                              labelText: "Menit",
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              filled: true,
-                              fillColor: Colors.white,
-                            ),
-                          ),
-                        ),
-                        SizedBox(width: 8),
-                        Expanded(
-                          child: TextField(
-                            controller: detik2Controller,
-                            keyboardType: TextInputType.number,
-                            decoration: InputDecoration(
-                              labelText: "Detik",
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              filled: true,
-                              fillColor: Colors.white,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 10),
-                    ElevatedButton(
-                      onPressed: konversiKeDetik,
-                      child: Text("Konversi"),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue[400],
-                        foregroundColor: Colors.white,
-                        padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                    ),
-                    if (hasilKonversi2.isNotEmpty) ...[
-                      SizedBox(height: 10),
-                      Center(
-                        child: Container(
-                          padding: EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: Colors.blue[100],
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            hasilKonversi2,
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.blue[900],
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            ),
+            const SizedBox(height: 16),
+            buildInput("Tahun", tahunController, updateFromTahun),
+            buildInput("Jam", jamController, updateFromJam),
+            buildInput("Menit", menitController, updateFromMenit),
+            buildInput("Detik", detikController, updateFromDetik),
           ],
         ),
       ),

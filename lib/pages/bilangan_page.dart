@@ -7,53 +7,53 @@ class BilanganPage extends StatefulWidget {
 
 class _BilanganPageState extends State<BilanganPage> {
   final TextEditingController _controller = TextEditingController();
-  String _result = "";
+  List<String> hasilJenisBilangan = [];
 
-  void _checkBilangan() {
+  void _cekJenisBilangan() {
     String input = _controller.text.trim();
     if (input.isEmpty) return;
 
     double? number = double.tryParse(input);
     if (number == null) {
       setState(() {
-        _result = "Input bukan angka yang valid.";
+        hasilJenisBilangan = ["Input bukan angka yang valid."];
       });
       return;
     }
 
-    List<String> types = [];
+    List<String> jenis = [];
 
-    if (number == number.roundToDouble()) {
+    bool isDesimal = number % 1 != 0;
+
+    if (!isDesimal) {
       int intNumber = number.toInt();
 
-      // Prima
-      if (intNumber > 1 && isPrima(intNumber)) {
-        types.add("Bilangan Prima");
-      }
-
       // Cacah
-      if (intNumber >= 0) {
-        types.add("Bilangan Cacah");
+      if (intNumber >= 0) jenis.add("Cacah");
+
+      // Bulat Positif / Negatif / Nol
+      if (intNumber > 0) {
+        jenis.add("Bulat Positif");
+      } else if (intNumber < 0) {
+        jenis.add("Bulat Negatif");
+      } else {
+        jenis.add("Nol");
       }
 
-      // Bulat Positif / Negatif
-      if (intNumber > 0) {
-        types.add("Bilangan Bulat Positif");
-      } else if (intNumber < 0) {
-        types.add("Bilangan Bulat Negatif");
-      } else {
-        types.add("Nol");
+      // Prima
+      if (intNumber > 1 && _isPrima(intNumber)) {
+        jenis.add("Prima");
       }
     } else {
-      types.add("Bilangan Desimal");
+      jenis.add("Desimal");
     }
 
     setState(() {
-      _result = types.join(", ");
+      hasilJenisBilangan = jenis;
     });
   }
 
-  bool isPrima(int number) {
+  bool _isPrima(int number) {
     for (int i = 2; i <= number ~/ 2; i++) {
       if (number % i == 0) return false;
     }
@@ -76,9 +76,9 @@ class _BilanganPageState extends State<BilanganPage> {
           children: [
             TextField(
               controller: _controller,
-              keyboardType: TextInputType.number,
+              keyboardType: TextInputType.numberWithOptions(decimal: true),
               decoration: InputDecoration(
-                labelText: "Masukkan angka",
+                labelText: "Masukkan Angka",
                 border: OutlineInputBorder(),
                 filled: true,
                 fillColor: Colors.white,
@@ -86,8 +86,8 @@ class _BilanganPageState extends State<BilanganPage> {
             ),
             SizedBox(height: 20),
             ElevatedButton(
-              onPressed: _checkBilangan,
-              child: Text("Cek Jenis Bilangan"),
+              onPressed: _cekJenisBilangan,
+              child: Text("Cek Bilangan"),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.blue[400],
                 foregroundColor: Colors.white,
@@ -97,26 +97,30 @@ class _BilanganPageState extends State<BilanganPage> {
                 ),
               ),
             ),
-            SizedBox(height: 20),
-            Visibility(
-              visible: _result.isNotEmpty,
-              child: Container(
-                padding: EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.blue[100],
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  _result,
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.blue[900],
-                  ),
-                  textAlign: TextAlign.center,
-                ),
+            SizedBox(height: 30),
+            if (hasilJenisBilangan.isNotEmpty)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: hasilJenisBilangan.map((jenis) {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 6),
+                    child: Row(
+                      children: [
+                        Icon(Icons.circle, color: Colors.blue),
+                        SizedBox(width: 8),
+                        Text(
+                          jenis,
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.blue[900],
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList(),
               ),
-            ),
           ],
         ),
       ),

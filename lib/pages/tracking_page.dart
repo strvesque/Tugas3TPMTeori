@@ -1,27 +1,25 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:permission_handler/permission_handler.dart';
 
-class TrackingPage extends StatefulWidget {
+class TrackingMapPage extends StatefulWidget {
   @override
-  _TrackingPageState createState() => _TrackingPageState();
+  _TrackingMapPageState createState() => _TrackingMapPageState();
 }
 
-class _TrackingPageState extends State<TrackingPage> {
-  Position? _position;
+class _TrackingMapPageState extends State<TrackingMapPage> {
+  LatLng? _currentPosition;
   String _status = "Mengambil lokasi...";
 
   @override
   void initState() {
     super.initState();
-    _getLocation();
+    _getCurrentLocation();
   }
 
-  Future<void> _getLocation() async {
-    bool serviceEnabled;
-
-    // Cek apakah layanan lokasi aktif
-    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+  Future<void> _getCurrentLocation() async {
+    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
       setState(() {
         _status = "Layanan lokasi tidak aktif.";
@@ -29,48 +27,35 @@ class _TrackingPageState extends State<TrackingPage> {
       return;
     }
 
-    // Meminta izin lokasi menggunakan permission_handler
-    PermissionStatus permissionStatus = await Permission.location.request();
-
-    if (permissionStatus != PermissionStatus.granted) {
+    LocationPermission permission = await Geolocator.requestPermission();
+    if (permission == LocationPermission.denied ||
+        permission == LocationPermission.deniedForever) {
       setState(() {
         _status = "Izin lokasi ditolak.";
       });
       return;
     }
 
-    // Jika izin diberikan, lanjutkan mengambil lokasi
-    try {
-      Position position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
-      );
+    Position position = await Geolocator.getCurrentPosition(
+      desiredAccuracy: LocationAccuracy.high,
+    );
 
-      setState(() {
-        _position = position;
-        _status = "Lokasi berhasil didapat.";
-      });
+    setState(() {
+      _currentPosition = LatLng(position.latitude, position.longitude);
+      _status = "Lokasi berhasil didapat.";
+    });
 
-      // Setelah mendapatkan posisi pertama, mulai stream lokasi
-      Geolocator.getPositionStream(
-        locationSettings: LocationSettings(accuracy: LocationAccuracy.high),
-      ).listen((Position pos) {
-        setState(() {
-          _position = pos;
-        });
-      });
-    } catch (e) {
+    Geolocator.getPositionStream(
+      locationSettings: LocationSettings(accuracy: LocationAccuracy.high),
+    ).listen((Position pos) {
       setState(() {
-        _status = "Gagal mendapatkan lokasi: $e";
+        _currentPosition = LatLng(pos.latitude, pos.longitude);
       });
-    }
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    String locationText = _position != null
-        ? "Latitude: ${_position!.latitude}\nLongitude: ${_position!.longitude}"
-        : _status;
-
     return Scaffold(
       backgroundColor: Colors.lightBlue[50],
       appBar: AppBar(
@@ -79,42 +64,35 @@ class _TrackingPageState extends State<TrackingPage> {
         foregroundColor: Colors.white,
         elevation: 0,
       ),
-      body: Center(
-        child: Card(
-          margin: EdgeInsets.all(20),
-          elevation: 8,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Padding(
-            padding: EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
+      body: _currentPosition == null
+          ? Center(child: Text(_status))
+          : FlutterMap(
+              options: MapOptions(
+                center: _currentPosition,
+                zoom: 16.0,
+              ),
               children: [
-                Icon(Icons.location_on, size: 48, color: Colors.blue[700]),
-                SizedBox(height: 16),
-                Text(
-                  "Informasi Lokasi",
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.blue[800],
-                  ),
+                TileLayer(
+                  urlTemplate:
+                      'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                  subdomains: ['a', 'b', 'c'],
                 ),
-                SizedBox(height: 16),
-                Text(
-                  locationText,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 18,
-                    color: Colors.blue[900],
-                  ),
+                MarkerLayer(
+                  markers: [
+                    Marker(
+                      point: _currentPosition!,
+                      width: 80,
+                      height: 80,
+                      child: Icon(
+                        Icons.location_on,
+                        size: 48,
+                        color: Colors.red,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
-          ),
-        ),
-      ),
     );
   }
 }
