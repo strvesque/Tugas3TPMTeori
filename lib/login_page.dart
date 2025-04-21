@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginPage extends StatefulWidget {
   @override
@@ -10,7 +11,7 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController _password = TextEditingController();
   bool _obscurePassword = true;
 
-  void _login(BuildContext context) {
+  Future<void> _login(BuildContext context) async {
     final user = _username.text.trim();
     final pass = _password.text.trim();
 
@@ -31,6 +32,11 @@ class _LoginPageState extends State<LoginPage> {
         SnackBar(content: Text(errorMessage)),
       );
     } else {
+      // Simpan session login
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('isLoggedIn', true);
+
+      // Arahkan ke halaman home
       Navigator.pushReplacementNamed(context, '/home');
     }
   }

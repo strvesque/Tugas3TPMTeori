@@ -11,32 +11,27 @@ class _RekomendasiPageState extends State<RekomendasiPage> {
     {
       "nama": "TXT Discography",
       "url": "https://ibighit.com/txt/eng/discography/",
-      "image":
-          "assets/txt.png"
+      "image": "assets/txt.png"
     },
     {
       "nama": "Youtube",
       "url": "https://www.youtube.com/",
-      "image":
-          "assets/yt.jpg"
+      "image": "assets/yt.jpg"
     },
     {
       "nama": "Numuki",
       "url": "https://www.numuki.com/",
-      "image":
-          "assets/numuki.jpg"
+      "image": "assets/numuki.jpg"
     },
     {
       "nama": "Chat GPT",
       "url": "https://chatgpt.com/",
-      "image":
-          "assets/gpt.png"
+      "image": "assets/gpt.png"
     },
     {
       "nama": "Wikipedia",
       "url": "https://www.wikipedia.org",
-      "image":
-          "assets/wikipedia.png"
+      "image": "assets/wikipedia.png"
     },
   ];
 
@@ -64,11 +59,25 @@ class _RekomendasiPageState extends State<RekomendasiPage> {
 
   void _toggleFavorite(String url) {
     setState(() {
+      bool added;
       if (favoriteUrls.contains(url)) {
         favoriteUrls.remove(url);
+        added = false;
       } else {
         favoriteUrls.add(url);
+        added = true;
       }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            added
+                ? 'Situs ditambahkan ke favorit'
+                : 'Situs dihapus dari favorit',
+          ),
+          duration: Duration(seconds: 2),
+        ),
+      );
     });
   }
 

@@ -1,6 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class BantuanPage extends StatelessWidget {
+  Future<void> _logout(BuildContext context) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('isLoggedIn');
+    Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+  }
+
   void _showLogoutConfirmation(BuildContext context) {
     showDialog(
       context: context,
@@ -16,7 +23,7 @@ class BantuanPage extends StatelessWidget {
             ElevatedButton(
               onPressed: () {
                 Navigator.of(ctx).pop(); // Tutup dialog
-                Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+                _logout(context); // Panggil fungsi logout
               },
               child: Text("Logout"),
               style: ElevatedButton.styleFrom(
